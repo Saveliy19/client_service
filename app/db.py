@@ -1,5 +1,8 @@
 import asyncpg
+from asyncpg import Record
+from typing import List
 
+from app.models import UserToken
 
 class DataBase:
     def __init__(self, host, port, user, database, password):
@@ -31,3 +34,18 @@ class DataBase:
         if self.connection:
             await self.connection.close()
 
+    async def add_user(self, *args):
+        query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC) VALUES ($1, $2, $3, $4, $5);'''
+        await self.exec_query(query, *args)
+
+
+    async def get_user_by_email(self, email):
+        query = '''SELECT ID, EMAIL, PASSWORD_HASH FROM USERS WHERE EMAIL = $1;'''
+        result: List[Record]  = await self.select_query(query, email)
+        #print(result[0]["id"])
+        if result:
+            user_data = result[0]
+            user_token = UserToken(id=user_data["id"], email=user_data["email"], password=user_data["password_hash"])
+            return user_token
+        else:
+            return None
