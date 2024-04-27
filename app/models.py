@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-class User(BaseModel):   
+class UserRegistration(BaseModel):   
     email: EmailStr
     password: str
     last_name: str
@@ -9,6 +9,7 @@ class User(BaseModel):
     patronymic: str
     rating: float
     is_moderator: bool
+    city: int
 
 class City(BaseModel):
     pass
@@ -23,6 +24,7 @@ class UserToken(BaseModel):
     id: int
     email: EmailStr
     password: str
+    is_moderator: bool
 
 class Token(BaseModel):
     access_token: str

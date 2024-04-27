@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.db import DataBase
 
 from app.config import host, port, user, database, password
-from app.models import User, UserToToken, Token
+from app.models import UserRegistration, UserToToken, Token
 
 from app.auth import hash_password, authentificate_user, create_access_token
 
@@ -16,19 +16,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 db = DataBase(host, port, user, database, password)
 
+# маршрут регистрации нового пользователя в системе
 @router.post("/registration")
-async def registration(user_data: User):
+async def registration(user_data: UserRegistration):
     try:
         user = await db.add_user(user_data.email, 
                                 (await hash_password(user_data.password)).decode('utf-8'), 
                                 user_data.last_name, 
                                 user_data.first_name, 
-                                user_data.patronymic)
+                                user_data.patronymic,
+                                user_data.is_moderator,
+                                user_data.city)
     except UniqueViolationError:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
-    
+    return {"message": "User successfully registered"}, status.HTTP_201_CREATED
+
+# маршрут для получения access токена     
 @router.post("/token")
 async def login_for_access_token(user_data: UserToToken):
     user = await authentificate_user(db, user_data.email, user_data.password)
@@ -38,7 +43,7 @@ async def login_for_access_token(user_data: UserToToken):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = await create_access_token(data={"sub": user.id})
+    access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator})
     return Token(access_token=access_token, token_type="bearer")
 
 
