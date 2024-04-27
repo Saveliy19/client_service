@@ -41,6 +41,8 @@ class DataBase:
         if self.connection:
             await self.connection.close()
 
+
+    #
     async def add_user(self, *args):
         query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC, IS_MODERATOR) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID;'''
         new_user_id = await self.insert_returning(query, *args[0:6])
@@ -48,7 +50,7 @@ class DataBase:
         await self.exec_query(query, args[-1])
         
 
-
+    #
     async def get_user_by_email(self, email):
         query = '''SELECT ID, EMAIL, PASSWORD_HASH, IS_MODERATOR FROM USERS WHERE EMAIL = $1;'''
         result: List[Record]  = await self.select_query(query, email)
@@ -59,3 +61,19 @@ class DataBase:
             return user_token
         else:
             return None
+
+    #    
+    async def get_user_by_id(self, id):
+        query = '''SELECT * FROM USERS WHERE ID = $1;'''
+        result: List[Record]  = await self.select_query(query, id)
+        if result:
+            return result
+        else:
+            return None
+        
+    # 
+    async def update_user_password_by_user_id(self, new_password_hash, user_id):
+        query = '''UPDATE USERS
+                    SET PASSWORD_HASH = $1
+                    WHERE ID = $2;'''
+        await self.exec_query(query, new_password_hash, user_id)

@@ -2,10 +2,14 @@ import bcrypt
 
 from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import HTTPException, Depends
 import jwt
+from jwt import InvalidSignatureError, ExpiredSignatureError
+#from jose import JWTError
+
 
 
 async def hash_password(password):
@@ -32,3 +36,26 @@ async def authentificate_user(db, email, password):
         return False
     print('PROVERKA PROSHLA!!!')
     return user
+
+async def verify_token(token: str):
+    credentials_exception1 = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    credentials_exception2 = HTTPException(
+        status_code=401,
+        detail="Signature has expired",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(payload)
+        id: int = payload.get("sub")
+        if id is None:
+            raise credentials_exception1
+    except InvalidSignatureError:
+        raise credentials_exception1
+    except ExpiredSignatureError:
+        raise credentials_exception2
+    return id

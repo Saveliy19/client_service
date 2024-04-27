@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
 from app.db import DataBase
 
 from app.config import host, port, user, database, password
-from app.models import UserRegistration, UserToToken, Token
+from app.models import UserRegistration, UserToToken, Token, NewPassword
 
-from app.auth import hash_password, authentificate_user, create_access_token
+from app.auth import hash_password, authentificate_user, create_access_token, verify_token
 
 from asyncpg.exceptions import UniqueViolationError
 
@@ -43,7 +43,19 @@ async def login_for_access_token(user_data: UserToToken):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator})
+    access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator, "email": user.email})
     return Token(access_token=access_token, token_type="bearer")
 
 
+
+# маршрут для обновления пароля пользователя
+@router.post("/change_password")
+async def change_user_password(user_data: NewPassword):
+    user_id = await verify_token(user_data.token)
+    if user_id:
+        if (await db.get_user_by_id(user_id) is None):
+            raise HTTPException(status_code=404, detail="User not found")
+        await db.update_user_password_by_user_id((await hash_password(user_data.password)).decode('utf-8'), user_id)
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+    return status.HTTP_200_OK

@@ -29,3 +29,7 @@ class UserToken(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class NewPassword(BaseModel):
+    token: str
+    password: str
