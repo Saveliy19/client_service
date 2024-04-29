@@ -67,7 +67,8 @@ class DataBase:
         query = '''SELECT * FROM USERS WHERE ID = $1;'''
         result: List[Record]  = await self.select_query(query, id)
         if result:
-            return result
+            data = result[0]
+            return data
         else:
             return None
         
@@ -77,3 +78,15 @@ class DataBase:
                     SET PASSWORD_HASH = $1
                     WHERE ID = $2;'''
         await self.exec_query(query, new_password_hash, user_id)
+
+
+    async def get_city_by_user_id(self, id):
+        query = '''SELECT CITY_NAME, REGION
+                    FROM USERS JOIN USER_CITY
+                    ON USERS.ID = USER_CITY.USER_ID
+                    JOIN CITY
+                    ON CITY.ID = USER_CITY.CITY_ID
+                    WHERE USERS.ID = $1;'''
+        result: List[Record]  = await self.select_query(query, id)
+        data = result[0]
+        return data

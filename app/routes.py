@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.db import DataBase
 
 from app.config import host, port, user, database, password
-from app.models import UserRegistration, UserToToken, Token, NewPassword
+from app.models import UserRegistration, UserToToken, Token, NewPassword, UserAbout, TokenForData
 
 from app.auth import hash_password, authentificate_user, create_access_token, verify_token
 
@@ -59,3 +59,21 @@ async def change_user_password(user_data: NewPassword):
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return status.HTTP_200_OK
+
+# маршрут для получения данных о пользователе
+@router.post("/get_data")
+async def get_user_data(token_data: TokenForData):
+    user_id = await verify_token(token_data.token)
+    if user_id:
+        info = await db.get_user_by_id(user_id)
+        if (info is None):
+            raise HTTPException(status_code=404, detail="User not found")
+        city = await db.get_city_by_user_id(user_id)
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserAbout(last_name = info["last_name"], 
+                     first_name=info["first_name"], 
+                     patronymic=info["patronymic"], 
+                     rating=info["rating"], 
+                     city=city["city_name"],
+                     region = city["region"]), status.HTTP_200_OK
