@@ -43,7 +43,7 @@ async def login_for_access_token(user_data: UserToToken):
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator, "email": user.email})
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer", is_moderator=user.is_moderator)
 
 
 # маршрут для верификации пользователя

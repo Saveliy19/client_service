@@ -40,6 +40,7 @@ class UserToken(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    is_moderator: bool
 
 # класс с данными для смены пароля
 class NewPassword(BaseModel):
