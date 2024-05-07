@@ -25,12 +25,11 @@ async def registration(user_data: UserRegistration):
                                 user_data.last_name, 
                                 user_data.first_name, 
                                 user_data.patronymic,
-                                user_data.is_moderator,
                                 user_data.city)
     except UniqueViolationError:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=str(e))
     return {"message": "User successfully registered"}, status.HTTP_201_CREATED
 
 # маршрут для получения access токена     
@@ -45,6 +44,20 @@ async def login_for_access_token(user_data: UserToToken):
         )
     access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator, "email": user.email})
     return Token(access_token=access_token, token_type="bearer")
+
+
+# маршрут для верификации пользователя
+@router.post("/verify_user")
+async def verify_user(token_data: TokenForData):
+    user_id = await verify_token(token_data.token)
+    if user_id:
+        user_data = await db.get_user_by_id(user_id)
+        if (user_data is None):
+            raise HTTPException(status_code=404, detail="User not found")
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"id": user_data["id"], "is_moderator": user_data["is_moderator"]}, status.HTTP_200_OK
+
 
 
 
@@ -71,7 +84,8 @@ async def get_user_data(token_data: TokenForData):
         city = await db.get_city_by_user_id(user_id)
     else:
         raise HTTPException(status_code=404, detail="User not found")
-    return UserAbout(last_name = info["last_name"], 
+    return UserAbout(id = info["id"],
+    		     last_name = info["last_name"], 
                      first_name=info["first_name"], 
                      patronymic=info["patronymic"], 
                      rating=info["rating"], 

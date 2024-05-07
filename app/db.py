@@ -44,8 +44,8 @@ class DataBase:
 
     #
     async def add_user(self, *args):
-        query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC, IS_MODERATOR) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID;'''
-        new_user_id = await self.insert_returning(query, *args[0:6])
+        query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC) VALUES ($1, $2, $3, $4, $5) RETURNING ID;'''
+        new_user_id = await self.insert_returning(query, *args[0:5])
         query = f"""INSERT INTO USER_CITY (CITY_ID, USER_ID) VALUES ($1, {new_user_id});"""
         await self.exec_query(query, args[-1])
         

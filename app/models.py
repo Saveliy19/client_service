@@ -8,8 +8,6 @@ class UserRegistration(BaseModel):
     last_name: str
     first_name: str
     patronymic: str
-    rating: float
-    is_moderator: bool
     city: int
 
 # класс с данными переданного токена пользователя
@@ -18,6 +16,7 @@ class TokenForData(BaseModel):
 
 # класс с данными передаваемыми при запросе информации о пользователе
 class UserAbout(BaseModel):
+    id: int
     last_name: str
     first_name: str
     patronymic: str
