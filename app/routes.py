@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException,  status
 from fastapi.security import OAuth2PasswordBearer
-from app.db import DataBase
 
-from app.config import host, port, user, database, password
 from app.models import UserRegistration, UserToToken, Token, NewPassword, UserAbout, TokenForData
 
 from app.auth import hash_password, authentificate_user, create_access_token, verify_token
+from app.utils import add_user, get_city_by_user_id, get_user_by_id, update_user_password_by_user_id
 
 from asyncpg.exceptions import UniqueViolationError
 
@@ -14,13 +13,12 @@ router = APIRouter()
 # обработка аутетификаций по токену
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-db = DataBase(host, port, user, database, password)
 
 # маршрут регистрации нового пользователя в системе
 @router.post("/registration")
 async def registration(user_data: UserRegistration):
     try:
-        user = await db.add_user(user_data.email, 
+        await add_user(user_data.email, 
                                 (await hash_password(user_data.password)).decode('utf-8'), 
                                 user_data.last_name, 
                                 user_data.first_name, 
@@ -35,7 +33,7 @@ async def registration(user_data: UserRegistration):
 # маршрут для получения access токена     
 @router.post("/token")
 async def login_for_access_token(user_data: UserToToken):
-    user = await authentificate_user(db, user_data.email, user_data.password)
+    user = await authentificate_user(user_data.email, user_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,7 +49,7 @@ async def login_for_access_token(user_data: UserToToken):
 async def verify_user(token_data: TokenForData):
     user_id = await verify_token(token_data.token)
     if user_id:
-        user_data = await db.get_user_by_id(user_id)
+        user_data = await get_user_by_id(user_id)
         if (user_data is None):
             raise HTTPException(status_code=404, detail="User not found")
     else:
@@ -66,9 +64,9 @@ async def verify_user(token_data: TokenForData):
 async def change_user_password(user_data: NewPassword):
     user_id = await verify_token(user_data.token)
     if user_id:
-        if (await db.get_user_by_id(user_id) is None):
+        if (await get_user_by_id(user_id) is None):
             raise HTTPException(status_code=404, detail="User not found")
-        await db.update_user_password_by_user_id((await hash_password(user_data.password)).decode('utf-8'), user_id)
+        await update_user_password_by_user_id((await hash_password(user_data.password)).decode('utf-8'), user_id)
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return status.HTTP_200_OK
@@ -78,10 +76,10 @@ async def change_user_password(user_data: NewPassword):
 async def get_user_data(token_data: TokenForData):
     user_id = await verify_token(token_data.token)
     if user_id:
-        info = await db.get_user_by_id(user_id)
+        info = await get_user_by_id(user_id)
         if (info is None):
             raise HTTPException(status_code=404, detail="User not found")
-        city = await db.get_city_by_user_id(user_id)
+        city = await get_city_by_user_id(user_id)
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return UserAbout(id = info["id"],

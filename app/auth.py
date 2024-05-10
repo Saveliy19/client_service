@@ -1,6 +1,7 @@
 import bcrypt
 
 from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.utils import get_user_by_email
 
 
 from datetime import datetime, timedelta, timezone
@@ -27,8 +28,8 @@ async def create_access_token(data: dict, expires_delta = ACCESS_TOKEN_EXPIRE_MI
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def authentificate_user(db, email, password):
-    user = await db.get_user_by_email(email)
+async def authentificate_user(email, password):
+    user = await get_user_by_email(email)
     #print(user.password)
     if not user:
         return False
