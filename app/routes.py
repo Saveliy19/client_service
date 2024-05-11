@@ -83,7 +83,8 @@ async def get_user_data(token_data: TokenForData):
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return UserAbout(id = info["id"],
-    		     last_name = info["last_name"], 
+                     email =info["email"],
+    		        last_name = info["last_name"], 
                      first_name=info["first_name"], 
                      patronymic=info["patronymic"], 
                      rating=info["rating"], 

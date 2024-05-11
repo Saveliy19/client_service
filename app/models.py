@@ -17,6 +17,7 @@ class TokenForData(BaseModel):
 # класс с данными передаваемыми при запросе информации о пользователе
 class UserAbout(BaseModel):
     id: int
+    email: EmailStr
     last_name: str
     first_name: str
     patronymic: str
