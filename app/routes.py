@@ -54,7 +54,7 @@ async def verify_user(token_data: TokenForData):
             raise HTTPException(status_code=404, detail="User not found")
     else:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"id": user_data["id"], "is_moderator": user_data["is_moderator"]}, status.HTTP_200_OK
+    return {"id": user_data["id"], "is_moderator": user_data["is_moderator"], "email": user_data["email"]}, status.HTTP_200_OK
 
 
 
