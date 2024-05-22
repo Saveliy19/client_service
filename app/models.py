@@ -10,6 +10,8 @@ class UserRegistration(BaseModel):
     patronymic: str
     city: int
 
+
+
 # класс с данными переданного токена пользователя
 class TokenForData(BaseModel):
     token: str

@@ -1,29 +1,45 @@
-from fastapi import APIRouter, HTTPException,  status
+from fastapi import APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from asyncpg.exceptions import UniqueViolationError
+
 
 from app.models import UserRegistration, UserToToken, Token, NewPassword, UserAbout, TokenForData
-
 from app.auth import hash_password, authentificate_user, create_access_token, verify_token
-from app.utils import add_user, get_city_by_user_id, get_user_by_id, update_user_password_by_user_id
-
-from asyncpg.exceptions import UniqueViolationError
+from app.utils import add_user, get_city_by_user_id, get_user_by_id, update_user_password_by_user_id, get_cities_per_region
 
 router = APIRouter()
 
-# обработка аутетификаций по токену
+# обработка аутентификаций по токену
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 # маршрут регистрации нового пользователя в системе
 @router.post("/registration")
 async def registration(user_data: UserRegistration):
     try:
         await add_user(user_data.email, 
-                                (await hash_password(user_data.password)).decode('utf-8'), 
-                                user_data.last_name, 
-                                user_data.first_name, 
-                                user_data.patronymic,
-                                user_data.city)
+                        (await hash_password(user_data.password)).decode('utf-8'), 
+                        user_data.last_name, 
+                        user_data.first_name, 
+                        user_data.patronymic,
+                        False,
+                        user_data.city)
+    except UniqueViolationError:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"message": "User successfully registered"}, status.HTTP_201_CREATED
+
+# маршрут для создания админа
+@router.post("/make_admin")
+async def make_admin(admin: UserRegistration):
+    try:
+        await add_user(admin.email, 
+                        (await hash_password(admin.password)).decode('utf-8'), 
+                        admin.last_name, 
+                        admin.first_name, 
+                        admin.patronymic,
+                        True,
+                        admin.city)
     except UniqueViolationError:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     except Exception as e:
@@ -57,7 +73,14 @@ async def verify_user(token_data: TokenForData):
     return {"id": user_data["id"], "is_moderator": user_data["is_moderator"], "email": user_data["email"]}, status.HTTP_200_OK
 
 
-
+# маршрут для получения списка всех городов системы
+@router.get("/get_cities")
+async def get_cities():
+    try:
+        cities_per_region = await get_cities_per_region()
+    except:
+        raise HTTPException(status_code=500)
+    return cities_per_region, status.HTTP_200_OK
 
 # маршрут для обновления пароля пользователя
 @router.post("/change_password")
@@ -89,4 +112,4 @@ async def get_user_data(token_data: TokenForData):
                      patronymic=info["patronymic"], 
                      rating=info["rating"], 
                      city=city["city_name"],
-                     region = city["region"]), status.HTTP_200_OK
+                     region = city["region_name"]), status.HTTP_200_OK

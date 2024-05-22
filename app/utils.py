@@ -11,8 +11,9 @@ db = DataBase(host, port, user, database, password)
 
 #
 async def add_user(*args):
-    query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC) VALUES ($1, $2, $3, $4, $5) RETURNING ID;'''
-    new_user_id = await db.insert_returning(query, *args[0:5])
+    query = '''INSERT INTO USERS (EMAIL, PASSWORD_HASH, LAST_NAME, FIRST_NAME, PATRONYMIC, IS_MODERATOR) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID;'''
+    print(*args[0:6])
+    new_user_id = await db.insert_returning(query, *args[0:6])
     query = f"""INSERT INTO USER_CITY (CITY_ID, USER_ID) VALUES ($1, {new_user_id});"""
     await db.exec_query(query, args[-1])
     
@@ -48,12 +49,29 @@ async def update_user_password_by_user_id(new_password_hash, user_id):
 
 
 async def get_city_by_user_id(id):
-    query = '''SELECT CITY_NAME, REGION
+    query = '''SELECT CITY_NAME, REGION_NAME
                 FROM USERS JOIN USER_CITY
                 ON USERS.ID = USER_CITY.USER_ID
                 JOIN CITY
                 ON CITY.ID = USER_CITY.CITY_ID
+                JOIN REGION
+                ON CITY.REGION_ID = REGION.ID
                 WHERE USERS.ID = $1;'''
     result: List[Record]  = await db.select_query(query, id)
     data = result[0]
     return data
+
+async def get_cities_per_region():
+    query = '''SELECT REGION.REGION_NAME, CITY.CITY_NAME, CITY.ID
+               FROM REGION JOIN CITY 
+               ON REGION.ID = CITY.REGION_ID;'''
+    cities_per_region = {}
+    for record in (await db.select_query(query)):
+        region_name = record['region_name']
+        city_name = record['city_name']
+        city_id = record['id']
+        if region_name not in cities_per_region:
+            cities_per_region[region_name] = []
+        cities_per_region[region_name].append({city_name: city_id})
+    
+    return cities_per_region
