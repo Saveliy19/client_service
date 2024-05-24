@@ -53,10 +53,12 @@ async def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         print(payload)
         id: int = payload.get("sub")
-        if id is None:
+        is_moderator: bool = payload.get("is_moderator")
+        email: str = payload.get("email")
+        if (id is None) or (is_moderator is None) or (email is None):
             raise credentials_exception1
     except InvalidSignatureError:
         raise credentials_exception1
     except ExpiredSignatureError:
         raise credentials_exception2
-    return id
+    return {"id": id, "is_moderator": is_moderator, "email": email}

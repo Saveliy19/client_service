@@ -63,14 +63,8 @@ async def login_for_access_token(user_data: UserToToken):
 # маршрут для верификации пользователя
 @router.post("/verify_user")
 async def verify_user(token_data: TokenForData):
-    user_id = await verify_token(token_data.token)
-    if user_id:
-        user_data = await get_user_by_id(user_id)
-        if (user_data is None):
-            raise HTTPException(status_code=404, detail="User not found")
-    else:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"id": user_data["id"], "is_moderator": user_data["is_moderator"], "email": user_data["email"]}, status.HTTP_200_OK
+    user_info = await verify_token(token_data.token)
+    return user_info, status.HTTP_200_OK
 
 
 # маршрут для получения списка всех городов системы
@@ -82,6 +76,7 @@ async def get_cities():
         raise HTTPException(status_code=500)
     return cities_per_region, status.HTTP_200_OK
 
+'''
 # маршрут для обновления пароля пользователя
 @router.post("/change_password")
 async def change_user_password(user_data: NewPassword):
@@ -93,16 +88,17 @@ async def change_user_password(user_data: NewPassword):
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return status.HTTP_200_OK
+'''
 
 # маршрут для получения данных о пользователе
 @router.post("/get_data")
 async def get_user_data(token_data: TokenForData):
-    user_id = await verify_token(token_data.token)
-    if user_id:
-        info = await get_user_by_id(user_id)
+    user_token_info = await verify_token(token_data.token)
+    if user_token_info:
+        info = await get_user_by_id(user_token_info["id"])
         if (info is None):
             raise HTTPException(status_code=404, detail="User not found")
-        city = await get_city_by_user_id(user_id)
+        city = await get_city_by_user_id(user_token_info["id"])
     else:
         raise HTTPException(status_code=404, detail="User not found")
     return UserAbout(id = info["id"],
