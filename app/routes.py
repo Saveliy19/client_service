@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
 from asyncpg.exceptions import UniqueViolationError
 
 
-from app.models import UserRegistration, UserToToken, Token, NewPassword, UserAbout, TokenForData
+from app.models import UserRegistration, UserToToken, Token, UserAbout, TokenForData
 from app.auth import hash_password, authentificate_user, create_access_token, verify_token
-from app.utils import add_user, get_city_by_user_id, get_user_by_id, update_user_password_by_user_id, get_cities_per_region
+from app.utils import add_user, get_city_by_user_id, get_user_by_id, get_cities_per_region
 
 router = APIRouter()
 
@@ -56,7 +56,11 @@ async def login_for_access_token(user_data: UserToToken):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = await create_access_token(data={"sub": user.id, "is_moderator": user.is_moderator, "email": user.email})
+    access_token = await create_access_token(data={"sub": user.id,
+                                                   "is_moderator": user.is_moderator, 
+                                                   "email": user.email, 
+                                                   "city": user.city, 
+                                                   "region": user.region})
     return Token(access_token=access_token, token_type="bearer", is_moderator=user.is_moderator)
 
 
@@ -76,19 +80,6 @@ async def get_cities():
         raise HTTPException(status_code=500)
     return cities_per_region, status.HTTP_200_OK
 
-'''
-# маршрут для обновления пароля пользователя
-@router.post("/change_password")
-async def change_user_password(user_data: NewPassword):
-    user_id = await verify_token(user_data.token)
-    if user_id:
-        if (await get_user_by_id(user_id) is None):
-            raise HTTPException(status_code=404, detail="User not found")
-        await update_user_password_by_user_id((await hash_password(user_data.password)).decode('utf-8'), user_id)
-    else:
-        raise HTTPException(status_code=404, detail="User not found")
-    return status.HTTP_200_OK
-'''
 
 # маршрут для получения данных о пользователе
 @router.post("/get_data")

@@ -38,6 +38,8 @@ class UserToken(BaseModel):
     email: EmailStr
     password: str
     is_moderator: bool
+    region: str
+    city: str
 
 # класс с возвращаемой информации при генерации access токена
 class Token(BaseModel):
